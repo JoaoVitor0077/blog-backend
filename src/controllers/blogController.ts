@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { createPost, getAllPosts, getPostById, updatePost, deletePost } from "../models/blogModel";
+import { createPost, getAllPosts, getPostById, updatePost, deletePost, getImagemByPostId } from "../models/blogModel";
 
 
 // Criar novo post
 export const createPostController = async (req: Request, res: Response): Promise<any> => {
   try {
     const { titulo, conteudo, usuario_id } = req.body;
-    const imagem = req.file?.buffer ?? Buffer.alloc(0);
+    const imagem = req.file?.buffer ?? null;
 
     if (!titulo || !conteudo || !usuario_id) {
       return res.status(400).json({ message: 'Campos obrigatórios ausentes.' });
@@ -53,9 +53,10 @@ export const updatePostController = async (req: Request, res: Response) => {
     const { titulo, conteudo, usuario_id } = req.body;
     const imagem = req.file ? req.file.buffer : null;
 
-    await updatePost(id, titulo, conteudo, imagem, usuario_id);
+    await updatePost(id, titulo, conteudo, imagem, Number(usuario_id));
     res.json({ message: 'Post atualizado com sucesso.' });
   } catch (error) {
+    console.error('Erro ao atualizar post:', error);
     res.status(500).json({ message: 'Erro ao atualizar post.' });
   }
 };
@@ -70,5 +71,23 @@ export const deletePostController = async (req: Request, res: Response) => {
     res.json({ message: 'Post deletado com sucesso.' });
   } catch (error) {
     res.status(500).json({ message: 'Erro ao deletar post.' });
+  }
+};
+
+// Buscar imagem do post por ID
+export const getImagemPostController = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+    const imagem = await getImagemByPostId(id);
+
+    if (!imagem) {
+      return res.status(404).json({ message: "Imagem não encontrada." });
+    }
+    // Definindo o tipo de conteúdo
+    res.setHeader("Content-Type", "image/jpeg");
+    res.send(imagem);
+  } catch (error) {
+    console.error("Erro ao buscar imagem:", error);
+    res.status(500).json({ message: "Erro ao buscar imagem." });
   }
 };

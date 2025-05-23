@@ -33,10 +33,19 @@ export const updatePost = async (
     imagem: Buffer | null,
     usuario_id: number
 ) => {
-    await db.promise().query(
-    'UPDATE posts SET titulo = ?, conteudo = ?, imagem = ? WHERE id = ? AND usuario_id = ?',
-    [titulo, conteudo, imagem ?? null, usuario_id]
-  );
+  if (imagem) {
+    // Atualiza tudo incluindo imagem
+    await db.promise().execute(
+      'UPDATE posts SET titulo = ?, conteudo = ?, imagem = ? WHERE id = ? AND usuario_id = ?',
+      [titulo, conteudo, imagem, id, usuario_id]
+    );
+  } else {
+    // Atualiza sem mexer na imagem
+    await db.promise().execute(
+      'UPDATE posts SET titulo = ?, conteudo = ? WHERE id = ? AND usuario_id = ?',
+      [titulo, conteudo, id, usuario_id]
+    );
+  }
 };
 
 // Função para deletar Post
@@ -45,3 +54,11 @@ export const deletePost = async (id: number, usuario_id: number) => {
         [id, usuario_id]
     );
 };
+
+export const getImagemByPostId = async (id: number) => {
+  const [rows] = await db.promise().execute('SELECT imagem FROM posts WHERE id = ?', [id]);
+  const result = rows as any[];
+  if (result.length === 0) return null;
+  return result[0].imagem; // vai ser um Buffer ou null
+};
+

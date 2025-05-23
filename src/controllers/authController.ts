@@ -59,3 +59,36 @@ export const loginUsuario = (req: Request, res: Response) => {
     });
   });
 };
+
+// Função para fazer logout
+export const logoutUsuario = (req: Request, res: Response) => {
+  
+}
+
+// Função para redefinir a senha
+export const redefinirSenha = (req: Request, res: Response) => {
+  const { email, novaSenha } = req.body;
+
+  // Verificando se o usuário existe
+  findUserByEmail(email, (err: any, results: any) => {
+    if (results.length === 0) {
+      return res.status(404).json({ message: "Usuário não encontrado." });
+    }
+
+    // Criptografando a nova senha
+    bcrypt.hash(novaSenha, 10, (err, hash) => {
+      if (err) return res.status(500).json("Erro ao criptografar senha.");
+
+      // Atualizando a senha do usuário
+      db.query(
+        "UPDATE usuarios SET senha = ? WHERE email = ?",
+        [hash, email],
+        (err) => {
+          if (err) return res.status(500).send("Erro ao atualizar senha.");
+          return res.status(200).send("Senha atualizada com sucesso.");
+        }
+      );
+    });
+  });
+};
+

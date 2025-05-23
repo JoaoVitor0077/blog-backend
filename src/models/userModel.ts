@@ -22,3 +22,15 @@ import {db} from "../database/connection";
         callback(err,results as RowDataPacket[])
     });
   };
+
+  //Função para atualizar a senha de um usuário baseado no email
+export const updateUserPasswordByEmail = (
+  email: string,
+  novaSenha: string,
+  callback: (err: Error | null, results?: ResultSetHeader) => void
+) => {
+  const query = "UPDATE usuarios SET senha = ? WHERE email = ?";
+  db.query(query, [novaSenha, email], (err, results) => {
+    callback(err, results as ResultSetHeader);
+  });
+};
