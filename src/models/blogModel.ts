@@ -15,8 +15,13 @@ export const createPost = async (
 };
   
 // Função que lista todos os posts
-export const getAllPosts = async () => {
+export const getAllPosts = async (usuario_id: number) => {
     const[rows] = await db.promise().execute('SELECT * FROM posts');
+    return rows;
+}
+// Função que lista os posts do usuário logado
+export const getMyPosts = async (usuario_id: number) => {
+    const[rows] = await db.promise().execute('SELECT * FROM posts WHERE usuario_id = ?', [usuario_id]);
     return rows;
 }
 

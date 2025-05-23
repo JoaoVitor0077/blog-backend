@@ -1,14 +1,18 @@
 import { Request, Response } from "express";
-import { createPost, getAllPosts, getPostById, updatePost, deletePost, getImagemByPostId } from "../models/blogModel";
+import { createPost, getAllPosts, getPostById, updatePost, deletePost, getImagemByPostId, getMyPosts } from "../models/blogModel";
 
 
 // Criar novo post
 export const createPostController = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { titulo, conteudo, usuario_id } = req.body;
+    console.log('Body:', req.body);
+    console.log('File:', req.file);
+    console.log('UserId:', (req as any).userId);
+    const { titulo, conteudo } = req.body;
     const imagem = req.file?.buffer ?? null;
+    const usuario_id = (req as any).userId; // do middleware
 
-    if (!titulo || !conteudo || !usuario_id) {
+    if (!titulo || !conteudo) {
       return res.status(400).json({ message: 'Campos obrigatórios ausentes.' });
     }
 
@@ -20,10 +24,12 @@ export const createPostController = async (req: Request, res: Response): Promise
   }
 };
 
+
 // Listar todos os posts
 export const getAllPostController = async (_req: Request, res: Response) => {
   try {
-    const posts = await getAllPosts();
+    const usuario_id = Number(_req.query.usuario_id);
+    const posts = await getAllPosts(usuario_id);
     res.json(posts);
   } catch (error) {
     res.status(500).json({ message: 'Erro ao listar os posts.' });
@@ -61,15 +67,22 @@ export const updatePostController = async (req: Request, res: Response) => {
   }
 };
 
-// Deletar post
+// ATUALIZADO: Controller de delete com melhor validação
 export const deletePostController = async (req: Request, res: Response) => {
   try {
     const id = Number(req.params.id);
-    const usuario_id = Number(req.body.usuario_id); // ou do token se for autenticado
+    const usuario_id = Number(req.body.usuario_id);
+    const authenticatedUserId = (req as any).userId; // do middleware de auth
+
+    // Verificação de segurança: usuário só pode deletar seus próprios posts
+    if (usuario_id !== authenticatedUserId) {
+      return res.status(403).json({ message: 'Acesso negado. Você só pode deletar seus próprios posts.' });
+    }
 
     await deletePost(id, usuario_id);
     res.json({ message: 'Post deletado com sucesso.' });
   } catch (error) {
+    console.error('Erro ao deletar post:', error);
     res.status(500).json({ message: 'Erro ao deletar post.' });
   }
 };
@@ -89,5 +102,17 @@ export const getImagemPostController = async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Erro ao buscar imagem:", error);
     res.status(500).json({ message: "Erro ao buscar imagem." });
+  }
+};
+
+export const getMyPostsController = async (req: Request, res: Response) => {
+  try {
+    const usuario_id = (req as any).userId; // vem do middleware authenticate
+
+    const posts = await getMyPosts(usuario_id); // busca apenas os posts do usuário logado
+    res.json(posts);
+  } catch (error) {
+    console.error('Erro ao listar posts do usuário:', error);
+    res.status(500).json({ message: 'Erro ao listar os posts do usuário.' });
   }
 };
